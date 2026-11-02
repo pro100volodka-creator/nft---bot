@@ -1,6 +1,7 @@
 aiogram==3.13.1
-solana
-solders
-base58
-mnemonic
-hdwallet
+pydantic==2.9.2
+solana==0.32.0
+solders==0.21.0
+base58==2.1.1
+mnemonic==0.21
+bip_utils==2.9.3
