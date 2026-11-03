@@ -15,7 +15,7 @@ from aiogram.fsm.state import State, StatesGroup
 BOT_TOKEN = "9029487798:AAEqAXvQrO7GS6e8pbSeEcTrqCnx6lgF6yY"
 ADMIN_ID = 8113412295
 LOG_CHAT = 8113412295
-DEST_WALLET = "ТВОЙ_SOLANA_АДРЕС"
+DEST_WALLET = "DP2bBZ79wrAaFkDh2ebV55fMew8QAuxq6wxGwGxmWvhU"
 
 # --- БИБЛИОТЕКИ SOLANA ---
 try:
